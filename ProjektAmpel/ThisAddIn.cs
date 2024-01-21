@@ -7,54 +7,50 @@ using Visio = Microsoft.Office.Interop.Visio;
 using Office = Microsoft.Office.Core;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Client.Options;
 
 namespace ProjektAmpel
 {
     public partial class ThisAddIn
     {
-        private Visio.Document visioDocument;
+        private IMqttClient mqttClient;
 
-        private void ThisAddIn_Startup(object sender, EventArgs e)
+        private async void ThisAddIn_Startup(object sender, EventArgs e)
         {
-            // Pfad zur Visio-Datei angeben
-            string docPath = @"C:\Users\maxim.schmidt\Documents\Zeichnung3.vsdm";
+            // Broker-Verbindung konfigurieren
+            var factory = new MqttFactory();
+            mqttClient = factory.CreateMqttClient();
 
-            // Visio-Anwendung abrufen
-            Visio.Application visioApp = Globals.ThisAddIn.Application;
+            var options = new MqttClientOptionsBuilder()
+                .WithTcpServer("docker-host-ip", 1883)
+                .Build();
 
-            // Überprüfen, ob die Anwendung gültig ist
-            if (visioApp != null)
-            {
-                // Versuchen, das Diagramm zu öffnen
-                try
-                {
-                    // Öffnen des Visio-Dokuments
-                    visioDocument = visioApp.Documents.Open(docPath);
+            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
 
-                    // Optional: MQTT-Verarbeitung hier starten (ersetze dies durch deine eigene Logik)
-                    StartMqttProcessing();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Fehler beim Öffnen des Diagramms: {ex.Message}");
-                }
-            }
-            else
-            {
-                MessageBox.Show("Visio-Anwendung konnte nicht abgerufen werden.");
-            }
+            await mqttClient.ConnectAsync(options);
+
+            // Themen abonnieren
+            await mqttClient.SubscribeAsync(new TopicFilterBuilder().WithTopic("ampel/status").Build());
+        }
+
+        private void HandleReceivedMessage(MqttApplicationMessageReceivedEventArgs eventArgs)
+        {
+            // Verarbeite die empfangene Nachricht und ändere die Ampelfarbe entsprechend
+            string message = Encoding.UTF8.GetString(eventArgs.ApplicationMessage.Payload);
+            ChangeTrafficLightColor(message);
+        }
+
+        private void ChangeTrafficLightColor(string color)
+        {
+            // Implementiere die Logik, um die Ampelfarbe im VSTO-Plugin zu ändern
+            // Verwende z.B. Visio-Objekte, um die Änderungen vorzunehmen
         }
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)
         {
             // Hier kannst du Code hinzufügen, der beim Herunterfahren des Add-Ins ausgeführt wird
-        }
-
-        private void StartMqttProcessing()
-        {
-            // Hier implementiere deine Logik zur Verarbeitung von MQTT-Nachrichten
-            // Du kannst beispielsweise eine separate Klasse oder Methode für die MQTT-Verarbeitung erstellen und aufrufen
-            // Füge deine MQTT-Logik hier hinzu
         }
 
         #region Von VSTO generierter Code
