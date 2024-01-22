@@ -9,7 +9,12 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using MQTTnet;
 using MQTTnet.Client;
-using MQTTnet.Client.Options;
+using MQTTnet.Server;
+using MQTTnet.Extensions;
+using MQTTnet.Extensions.ManagedClient;
+using MQTTnet.Channel;
+using System.Threading.Tasks;
+
 
 namespace ProjektAmpel
 {
@@ -23,23 +28,25 @@ namespace ProjektAmpel
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient();
 
-            var options = new MqttClientOptionsBuilder()
-                .WithTcpServer("docker-host-ip", 1883)
+            var options = new MQTTnet.Client.Options.MqttClientOptionsBuilder()
+                .WithTcpServer("localhost", 1883)
                 .Build();
-
-            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
 
             await mqttClient.ConnectAsync(options);
 
             // Themen abonnieren
-            await mqttClient.SubscribeAsync(new TopicFilterBuilder().WithTopic("ampel/status").Build());
+            await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("ampel/farbe").Build());
+            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
         }
 
         private void HandleReceivedMessage(MqttApplicationMessageReceivedEventArgs eventArgs)
         {
-            // Verarbeite die empfangene Nachricht und ändere die Ampelfarbe entsprechend
-            string message = Encoding.UTF8.GetString(eventArgs.ApplicationMessage.Payload);
-            ChangeTrafficLightColor(message);
+            // Callback-Methode, die aufgerufen wird, wenn eine MQTT-Nachricht empfangen wird
+            string topic = eventArgs.ApplicationMessage.Topic;
+            string payload = Encoding.UTF8.GetString(eventArgs.ApplicationMessage.Payload);
+
+            // Logik, um die Ampelfarbe basierend auf der empfangenen Nachricht zu ändern
+            ChangeTrafficLightColor(payload);
         }
 
         private void ChangeTrafficLightColor(string color)
