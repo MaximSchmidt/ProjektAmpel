@@ -14,6 +14,8 @@ using MQTTnet.Extensions;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Channel;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using Microsoft.Office.Tools.Ribbon;
 
 
 namespace ProjektAmpel
@@ -21,6 +23,7 @@ namespace ProjektAmpel
     public partial class ThisAddIn
     {
         private IMqttClient mqttClient;
+        private YourRibbonClass ribbon;
 
         private async void ThisAddIn_Startup(object sender, EventArgs e)
         {
@@ -37,12 +40,39 @@ namespace ProjektAmpel
             // Themen abonnieren
             await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("ampel/farbe").Build());
             mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
+
+            Visio.Application visioApp = Globals.ThisAddIn.Application;
+            visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
+
+            ribbon = new YourRibbonClass();
+            Globals.Ribbons.YourRibbonClass = ribbon;
+
+
         }
+
+
+        public partial class YourRibbonClass
+        {
+            private void Red_Click(object sender, RibbonControlEventArgs e)
+            {
+                // Handle the click event for the Red button
+            }
+
+            private void Green_Click(object sender, RibbonControlEventArgs e)
+            {
+                // Handle the click event for the Green button
+            }
+
+            private void Yellow_Click(object sender, RibbonControlEventArgs e)
+            {
+                // Handle the click event for the Yellow button
+            }
+        }
+
 
         private void HandleReceivedMessage(MqttApplicationMessageReceivedEventArgs eventArgs)
         {
             // Callback-Methode, die aufgerufen wird, wenn eine MQTT-Nachricht empfangen wird
-            string topic = eventArgs.ApplicationMessage.Topic;
             string payload = Encoding.UTF8.GetString(eventArgs.ApplicationMessage.Payload);
 
             // Logik, um die Ampelfarbe basierend auf der empfangenen Nachricht zu ändern
@@ -51,9 +81,53 @@ namespace ProjektAmpel
 
         private void ChangeTrafficLightColor(string color)
         {
-            // Implementiere die Logik, um die Ampelfarbe im VSTO-Plugin zu ändern
-            // Verwende z.B. Visio-Objekte, um die Änderungen vorzunehmen
+            try
+            {
+                Visio.Application visioApp = Globals.ThisAddIn.Application;
+                visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
+
+
+                // Get the shape you want to modify
+                int shapeID = 23;
+                Visio.Shape trafficLightShape = visioApp.ActivePage.Shapes.ItemFromID[shapeID];
+
+                // Check if the shape exists
+                if (trafficLightShape != null)
+                {
+                    // Set the fill color based on the received MQTT color
+                    switch (color.ToLower())
+                    {
+                        case "red":
+                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(255,0,0)";
+                            break;
+
+                        case "green":
+                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(0,255,0)";
+                            break;
+
+                        case "yellow":
+                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(255,255,0)";
+                            break;
+
+                        default:
+                            // Handle unknown color
+                            break;
+                    }
+                }
+                else
+                {
+                    // Handle the case where the shape is not found
+                    MessageBox.Show("Traffic light shape not found!");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                // Handle exceptions
+                MessageBox.Show($"An error occurred: {ex.Message}");
+            }
+
         }
+
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)
         {

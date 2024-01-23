@@ -213,5 +213,7 @@ namespace ProjektAmpel {
         internal ThisRibbonCollection(global::Microsoft.Office.Tools.Ribbon.RibbonFactory factory) : 
                 base(factory) {
         }
+
+        public ThisAddIn.YourRibbonClass YourRibbonClass { get; internal set; }
     }
 }
