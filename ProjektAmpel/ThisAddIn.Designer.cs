@@ -149,6 +149,10 @@ namespace ProjektAmpel {
         private bool NeedsFill(string MemberName) {
             return this.DataHost.NeedsFill(this, MemberName);
         }
+
+        public class YourRibbonClass
+        {
+        }
     }
     
     /// 

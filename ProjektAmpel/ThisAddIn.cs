@@ -16,17 +16,20 @@ using MQTTnet.Channel;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Tools.Ribbon;
-
+using Microsoft.Office.Tools;
+using System.Diagnostics;
 
 namespace ProjektAmpel
 {
     public partial class ThisAddIn
     {
         private IMqttClient mqttClient;
-        private YourRibbonClass ribbon;
+        private ThisAddIn addIn;
 
         private async void ThisAddIn_Startup(object sender, EventArgs e)
         {
+            try
+            {
             // Broker-Verbindung konfigurieren
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient();
@@ -39,94 +42,26 @@ namespace ProjektAmpel
 
             // Themen abonnieren
             await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("ampel/farbe").Build());
-            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
+            //mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
+
 
             Visio.Application visioApp = Globals.ThisAddIn.Application;
             visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
 
-            ribbon = new YourRibbonClass();
-            Globals.Ribbons.YourRibbonClass = ribbon;
-
-
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+          
         }
 
-
-        public partial class YourRibbonClass
+        protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
-            private void Red_Click(object sender, RibbonControlEventArgs e)
-            {
-                // Handle the click event for the Red button
-            }
-
-            private void Green_Click(object sender, RibbonControlEventArgs e)
-            {
-                // Handle the click event for the Green button
-            }
-
-            private void Yellow_Click(object sender, RibbonControlEventArgs e)
-            {
-                // Handle the click event for the Yellow button
-            }
+            return new Ribbon1();
         }
 
 
-        private void HandleReceivedMessage(MqttApplicationMessageReceivedEventArgs eventArgs)
-        {
-            // Callback-Methode, die aufgerufen wird, wenn eine MQTT-Nachricht empfangen wird
-            string payload = Encoding.UTF8.GetString(eventArgs.ApplicationMessage.Payload);
-
-            // Logik, um die Ampelfarbe basierend auf der empfangenen Nachricht zu ändern
-            ChangeTrafficLightColor(payload);
-        }
-
-        private void ChangeTrafficLightColor(string color)
-        {
-            try
-            {
-                Visio.Application visioApp = Globals.ThisAddIn.Application;
-                visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
-
-
-                // Get the shape you want to modify
-                int shapeID = 23;
-                Visio.Shape trafficLightShape = visioApp.ActivePage.Shapes.ItemFromID[shapeID];
-
-                // Check if the shape exists
-                if (trafficLightShape != null)
-                {
-                    // Set the fill color based on the received MQTT color
-                    switch (color.ToLower())
-                    {
-                        case "red":
-                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(255,0,0)";
-                            break;
-
-                        case "green":
-                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(0,255,0)";
-                            break;
-
-                        case "yellow":
-                            trafficLightShape.CellsU["FillForegnd"].FormulaU = "RGB(255,255,0)";
-                            break;
-
-                        default:
-                            // Handle unknown color
-                            break;
-                    }
-                }
-                else
-                {
-                    // Handle the case where the shape is not found
-                    MessageBox.Show("Traffic light shape not found!");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                // Handle exceptions
-                MessageBox.Show($"An error occurred: {ex.Message}");
-            }
-
-        }
 
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)
