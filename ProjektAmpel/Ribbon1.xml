@@ -5,8 +5,8 @@
 			<tab id="YourTabID" label="Ampel">
 				<group id="YourGroupID" label="Ampel">
 					<button id="btnRed" label="Red" onAction="Red_Click"/>
-					<button id="btnGreen" label="Green" onAction="Green_Click"/>
 					<button id="btnYellow" label="Yellow" onAction="Yellow_Click"/>
+					<button id="btnGreen" label="Green" onAction="Green_Click"/>
 				</group>
 			</tab>
 		</tabs>

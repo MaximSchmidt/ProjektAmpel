@@ -62,14 +62,14 @@ namespace ProjektAmpel
             Visio.Application visioApp = Globals.ThisAddIn.Application;
             if (visioApp == null)
             {
-                // Fehlerbehandlung: Visio-Application-Objekt ist null
+                Console.WriteLine("Visio-Application-Objekt ist null");
                 return;
             }
 
             Visio.Document activeDocument = visioApp.ActiveDocument;
             if (activeDocument == null)
             {
-                Console.WriteLine("Kein aktives Dokument"); 
+                Console.WriteLine("Kein aktives Dokument");
                 return;
             }
 
@@ -84,35 +84,48 @@ namespace ProjektAmpel
                 return;
             }
 
-            Visio.Shape shapeToChange = null;
-            try
-            {
-                shapeToChange = page.Shapes.get_ItemU("Sheet.23");
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Shape nicht gefunden");
-                return;
-            }
+            // Shape-IDs für die Ampel
+            string redShapeId = "Sheet.26";
+            string yellowShapeId = "Sheet.27";
+            string greenShapeId = "Sheet.28";
 
-            if (shapeToChange != null)
+            // Funktion, um ein Shape zu finden und dessen Farbe zu ändern
+            void SetShapeColor(string shapeId, string colorFormula)
             {
-                int shapeID = shapeToChange.ID;
-
-                switch (messagePayload)
+                try
                 {
-                    case "red":
-                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 0, 0)"; // Red color
-                        break;
-                    case "green":
-                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(0, 255, 0)"; // Green color
-                        break;
-                    case "yellow":
-                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 255, 0)"; // Yellow color
-                        break;
+                    var shape = page.Shapes.get_ItemU(shapeId);
+                    shape.Cells["FillForegnd"].FormulaU = colorFormula;
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Shape " + shapeId + " nicht gefunden");
                 }
             }
+
+            // Standardfarbe für Shapes (weiß)
+            string whiteColorFormula = "RGB(255, 255, 255)";
+
+            switch (messagePayload)
+            {
+                case "red":
+                    SetShapeColor(redShapeId, "RGB(255, 0, 0)"); // Rot
+                    SetShapeColor(yellowShapeId, whiteColorFormula); // Gelb -> Weiß
+                    SetShapeColor(greenShapeId, whiteColorFormula); // Grün -> Weiß
+                    break;
+                case "yellow":
+                    SetShapeColor(redShapeId, whiteColorFormula); // Rot -> Weiß
+                    SetShapeColor(yellowShapeId, "RGB(255, 255, 0)"); // Gelb
+                    SetShapeColor(greenShapeId, whiteColorFormula); // Grün -> Weiß
+                    break;
+                case "green":
+                    SetShapeColor(redShapeId, whiteColorFormula); // Rot -> Weiß
+                    SetShapeColor(yellowShapeId, whiteColorFormula); // Gelb -> Weiß
+                    SetShapeColor(greenShapeId, "RGB(0, 255, 0)"); // Grün
+                    break;
+            }
         }
+
 
 
 
