@@ -1,4 +1,5 @@
-﻿using MQTTnet.Client;
+﻿using MQTTnet;
+using MQTTnet.Client;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,27 +7,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
-
-
-// TODO:  Führen Sie diese Schritte aus, um das Element auf dem Menüband (XML) zu aktivieren:
-
-// 1: Kopieren Sie folgenden Codeblock in die ThisAddin-, ThisWorkbook- oder ThisDocument-Klasse.
-
-//  protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
-//  {
-//      return new Ribbon1();
-//  }
-
-// 2. Erstellen Sie Rückrufmethoden im Abschnitt "Menübandrückrufe" dieser Klasse, um Benutzeraktionen
-//    zu behandeln, z.B. das Klicken auf eine Schaltfläche. Hinweis: Wenn Sie dieses Menüband aus dem Menüband-Designer exportiert haben,
-//    verschieben Sie den Code aus den Ereignishandlern in die Rückrufmethoden, und ändern Sie den Code für die Verwendung mit dem
-//    Programmmodell für die Menübanderweiterung (RibbonX).
-
-// 3. Weisen Sie den Steuerelementtags in der Menüband-XML-Datei Attribute zu, um die entsprechenden Rückrufmethoden im Code anzugeben.  
-
-// Weitere Informationen erhalten Sie in der Menüband-XML-Dokumentation in der Hilfe zu Visual Studio-Tools für Office.
-
 
 namespace ProjektAmpel
 {
@@ -38,6 +20,34 @@ namespace ProjektAmpel
         public Ribbon1()
         {
 
+        }
+
+        private async void SendColorMessage(string color)
+        {
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic("ampel/farbe")
+                .WithPayload(color)
+                .WithExactlyOnceQoS()
+                .WithRetainFlag()
+                .Build();
+
+            await Globals.ThisAddIn.MqttClient.PublishAsync(message);
+        }
+
+
+        public void Red_Click(Office.IRibbonControl control)
+        {
+            SendColorMessage("red");
+        }
+
+        public void Green_Click(Office.IRibbonControl control)
+        {
+            SendColorMessage("green");
+        }
+
+        public void Yellow_Click(Office.IRibbonControl control)
+        {
+            SendColorMessage("yellow");
         }
 
         #region IRibbonExtensibility-Member
@@ -82,5 +92,6 @@ namespace ProjektAmpel
         }
 
         #endregion
+
     }
 }

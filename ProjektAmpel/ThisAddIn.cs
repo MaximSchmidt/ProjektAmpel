@@ -24,7 +24,6 @@ namespace ProjektAmpel
     public partial class ThisAddIn
     {
         private IMqttClient mqttClient;
-        private ThisAddIn addIn;
 
         private async void ThisAddIn_Startup(object sender, EventArgs e)
         {
@@ -42,7 +41,7 @@ namespace ProjektAmpel
 
             // Themen abonnieren
             await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("ampel/farbe").Build());
-            //mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
+            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
 
 
             Visio.Application visioApp = Globals.ThisAddIn.Application;
@@ -54,14 +53,42 @@ namespace ProjektAmpel
                 Debug.WriteLine(ex);
             }
           
+
         }
 
-        protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
+        private void HandleReceivedMessage(MqttApplicationMessageReceivedEventArgs e)
+        {
+            string messagePayload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+            Visio.Application visioApp = Globals.ThisAddIn.Application;
+            Visio.Document activeDocument = visioApp.ActiveDocument;
+
+            // replaces "ShapeID" with the actual ID
+            Visio.Shape shapeToChange = activeDocument.Pages[1].Shapes["23"];
+
+            switch (messagePayload)
+            {
+                case "red":
+                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 0, 0)"; // Red color
+                    break;
+                case "green":
+                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(0, 255, 0)"; // Green color
+                    break;
+                case "yellow":
+                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 255, 0)"; // Yellow color
+                    break;
+            }
+        }
+
+
+        protected override Office.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
             return new Ribbon1();
         }
 
-
+        public IMqttClient MqttClient
+        {
+            get { return mqttClient; }
+        }
 
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)

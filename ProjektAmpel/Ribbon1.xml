@@ -1,16 +1,16 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
-  <ribbon>
-    <tabs>
-      <tab id="tab1" label="Traffic Light">
-        <group id="group1" label="Control">
-          <button id="btnRed" label="Red" onAction="OnButtonClick"/>
-          <button id="btnGreen" label="Green" onAction="OnButtonClick"/>
-          <button id="btnYellow" label="Yellow" onAction="OnButtonClick"/>
-        </group>
-      </tab>
-    </tabs>
-  </ribbon>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+	<ribbon>
+		<tabs>
+			<tab id="YourTabID" label="YourTabLabel">
+				<group id="YourGroupID" label="YourGroupLabel">
+					<button id="btnRed" label="Red" onAction="Red_Click"/>
+					<button id="btnGreen" label="Green" onAction="Green_Click"/>
+					<button id="btnYellow" label="Yellow" onAction="Yellow_Click"/>
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
 </customUI>
 
 
