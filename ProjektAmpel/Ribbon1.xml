@@ -2,8 +2,8 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">
 	<ribbon>
 		<tabs>
-			<tab id="YourTabID" label="YourTabLabel">
-				<group id="YourGroupID" label="YourGroupLabel">
+			<tab id="YourTabID" label="Ampel">
+				<group id="YourGroupID" label="Ampel">
 					<button id="btnRed" label="Red" onAction="Red_Click"/>
 					<button id="btnGreen" label="Green" onAction="Green_Click"/>
 					<button id="btnYellow" label="Yellow" onAction="Yellow_Click"/>

@@ -60,24 +60,61 @@ namespace ProjektAmpel
         {
             string messagePayload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
             Visio.Application visioApp = Globals.ThisAddIn.Application;
-            Visio.Document activeDocument = visioApp.ActiveDocument;
-
-            // replaces "ShapeID" with the actual ID
-            Visio.Shape shapeToChange = activeDocument.Pages[1].Shapes["23"];
-
-            switch (messagePayload)
+            if (visioApp == null)
             {
-                case "red":
-                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 0, 0)"; // Red color
-                    break;
-                case "green":
-                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(0, 255, 0)"; // Green color
-                    break;
-                case "yellow":
-                    shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 255, 0)"; // Yellow color
-                    break;
+                // Fehlerbehandlung: Visio-Application-Objekt ist null
+                return;
+            }
+
+            Visio.Document activeDocument = visioApp.ActiveDocument;
+            if (activeDocument == null)
+            {
+                // Fehlerbehandlung: Kein aktives Dokument
+                return;
+            }
+
+            // Annahme: "Zeichnung3.vsdm" ist der Seitenname
+            Visio.Page page;
+            try
+            {
+                page = activeDocument.Pages["Zeichenblatt-1"];
+            }
+            catch (Exception ex)
+            {
+                // Fehlerbehandlung: Seite nicht gefunden
+                return;
+            }
+
+            Visio.Shape shapeToChange = null;
+            try
+            {
+                shapeToChange = page.Shapes.get_ItemU("23");
+            }
+            catch (Exception ex)
+            {
+                // Fehlerbehandlung: Shape nicht gefunden
+                return;
+            }
+
+            if (shapeToChange != null)
+            {
+                int shapeID = shapeToChange.ID;
+
+                switch (messagePayload)
+                {
+                    case "red":
+                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 0, 0)"; // Red color
+                        break;
+                    case "green":
+                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(0, 255, 0)"; // Green color
+                        break;
+                    case "yellow":
+                        shapeToChange.Cells["FillForegnd"].FormulaU = "RGB(255, 255, 0)"; // Yellow color
+                        break;
+                }
             }
         }
+
 
 
         protected override Office.IRibbonExtensibility CreateRibbonExtensibilityObject()
