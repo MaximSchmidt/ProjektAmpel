@@ -69,30 +69,29 @@ namespace ProjektAmpel
             Visio.Document activeDocument = visioApp.ActiveDocument;
             if (activeDocument == null)
             {
-                // Fehlerbehandlung: Kein aktives Dokument
+                Console.WriteLine("Kein aktives Dokument"); 
                 return;
             }
 
-            // Annahme: "Zeichnung3.vsdm" ist der Seitenname
             Visio.Page page;
             try
             {
                 page = activeDocument.Pages["Zeichenblatt-1"];
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Fehlerbehandlung: Seite nicht gefunden
+                Console.WriteLine("Seite nicht gefunden");
                 return;
             }
 
             Visio.Shape shapeToChange = null;
             try
             {
-                shapeToChange = page.Shapes.get_ItemU("23");
+                shapeToChange = page.Shapes.get_ItemU("Sheet.23");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Fehlerbehandlung: Shape nicht gefunden
+                Console.WriteLine("Shape nicht gefunden");
                 return;
             }
 
