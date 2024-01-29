@@ -18,6 +18,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Office.Tools.Ribbon;
 using Microsoft.Office.Tools;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace ProjektAmpel
 {
@@ -27,6 +28,9 @@ namespace ProjektAmpel
 
         private async void ThisAddIn_Startup(object sender, EventArgs e)
         {
+            var Server = "localhost";
+            int Port = 1883;
+
             try
             {
             // Broker-Verbindung konfigurieren
@@ -34,13 +38,13 @@ namespace ProjektAmpel
             mqttClient = factory.CreateMqttClient();
 
             var options = new MQTTnet.Client.Options.MqttClientOptionsBuilder()
-                .WithTcpServer("localhost", 1883)
+                .WithTcpServer(Server, Port)
                 .Build();
 
             await mqttClient.ConnectAsync(options);
 
-            // Themen abonnieren
-            await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("ampel/farbe").Build());
+                // Themen abonnieren
+            await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("/Heizungen/").Build());
             mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
 
 
@@ -62,14 +66,14 @@ namespace ProjektAmpel
             Visio.Application visioApp = Globals.ThisAddIn.Application;
             if (visioApp == null)
             {
-                Console.WriteLine("Visio-Application-Objekt ist null");
+                Debug.WriteLine("Visio-Application-Objekt ist null");
                 return;
             }
 
             Visio.Document activeDocument = visioApp.ActiveDocument;
             if (activeDocument == null)
             {
-                Console.WriteLine("Kein aktives Dokument");
+                Debug.WriteLine("Kein aktives Dokument");
                 return;
             }
 
@@ -80,64 +84,29 @@ namespace ProjektAmpel
             }
             catch (Exception)
             {
-                Console.WriteLine("Seite nicht gefunden");
+                Debug.WriteLine("Seite nicht gefunden");
                 return;
             }
 
-            // Shape-IDs für die Ampel
-            string redShapeId = "Sheet.26";
-            string yellowShapeId = "Sheet.27";
-            string greenShapeId = "Sheet.28";
-
-            // Funktion, um ein Shape zu finden und dessen Farbe zu ändern
-            void SetShapeColor(string shapeId, string colorFormula)
+            // JSON-Nachricht deserialisieren
+            try
             {
-                try
-                {
-                    var shape = page.Shapes.get_ItemU(shapeId);
-                    shape.Cells["FillForegnd"].FormulaU = colorFormula;
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Shape " + shapeId + " nicht gefunden");
-                }
+                var heaterData = Newtonsoft.Json.JsonConvert.DeserializeObject<HeaterData>(messagePayload);
+                // Hier können Sie die empfangenen Daten verarbeiten, z.B. um Shapes zu aktualisieren
             }
-
-            // Standardfarbe für Shapes (weiß)
-            string whiteColorFormula = "RGB(255, 255, 255)";
-
-            switch (messagePayload)
+            catch (JsonException ex)
             {
-                case "red":
-                    SetShapeColor(redShapeId, "RGB(255, 0, 0)"); // Rot
-                    SetShapeColor(yellowShapeId, whiteColorFormula); // Gelb -> Weiß
-                    SetShapeColor(greenShapeId, whiteColorFormula); // Grün -> Weiß
-                    break;
-                case "yellow":
-                    SetShapeColor(redShapeId, whiteColorFormula); // Rot -> Weiß
-                    SetShapeColor(yellowShapeId, "RGB(255, 255, 0)"); // Gelb
-                    SetShapeColor(greenShapeId, whiteColorFormula); // Grün -> Weiß
-                    break;
-                case "green":
-                    SetShapeColor(redShapeId, whiteColorFormula); // Rot -> Weiß
-                    SetShapeColor(yellowShapeId, whiteColorFormula); // Gelb -> Weiß
-                    SetShapeColor(greenShapeId, "RGB(0, 255, 0)"); // Grün
-                    break;
+                Debug.WriteLine("Fehler beim Deserialisieren der JSON-Nachricht: " + ex.Message);
             }
         }
 
-
-
-
-        protected override Office.IRibbonExtensibility CreateRibbonExtensibilityObject()
+        // Hilfsklasse zur Deserialisierung der JSON-Daten
+        public class HeaterData
         {
-            return new Ribbon1();
+            public string ID { get; set; }
+            public string Temp { get; set; }
         }
 
-        public IMqttClient MqttClient
-        {
-            get { return mqttClient; }
-        }
 
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)
