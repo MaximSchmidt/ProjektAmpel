@@ -33,30 +33,30 @@ namespace ProjektAmpel
 
             try
             {
-            // Broker-Verbindung konfigurieren
-            var factory = new MqttFactory();
-            mqttClient = factory.CreateMqttClient();
+                // Broker-Verbindung konfigurieren
+                var factory = new MqttFactory();
+                mqttClient = factory.CreateMqttClient();
 
-            var options = new MQTTnet.Client.Options.MqttClientOptionsBuilder()
-                .WithTcpServer(Server, Port)
-                .Build();
+                var options = new MQTTnet.Client.Options.MqttClientOptionsBuilder()
+                    .WithTcpServer(Server, Port)
+                    .Build();
 
-            await mqttClient.ConnectAsync(options);
+                await mqttClient.ConnectAsync(options);
 
                 // Themen abonnieren
-            await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("/Heizungen/").Build());
-            mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
+                await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("/Heizungen/").Build());
+                mqttClient.UseApplicationMessageReceivedHandler(HandleReceivedMessage);
 
 
-            Visio.Application visioApp = Globals.ThisAddIn.Application;
-            visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
+                Visio.Application visioApp = Globals.ThisAddIn.Application;
+                visioApp.Documents.Open("C:\\Users\\maxim.schmidt\\Documents\\Zeichnung3.vsdm");
 
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
             }
-          
+
 
         }
 
@@ -91,12 +91,47 @@ namespace ProjektAmpel
             // JSON-Nachricht deserialisieren
             try
             {
-                var heaterData = Newtonsoft.Json.JsonConvert.DeserializeObject<HeaterData>(messagePayload);
-                // Hier können Sie die empfangenen Daten verarbeiten, z.B. um Shapes zu aktualisieren
+                var heaterData = JsonConvert.DeserializeObject<HeaterData>(messagePayload);
+
+                foreach (Visio.Shape shape in page.Shapes)
+                {
+                    try
+                    {
+                        var exist = shape.CellExistsU["Prop.Heizungen", 0];
+                        if (exist !=0)
+                        {
+                            string heaterValue = shape.CellsU["Prop.Heizungen"].ResultStrU[Visio.VisUnitCodes.visNoCast];
+                            if (heaterValue == heaterData.ID)
+                            {
+
+                                    var exist1 = shape.CellExistsU["Prop.Temperatur", 0];
+                                    if (exist1 != 0)
+
+                                {
+                                    Debug.WriteLine($"Setze 'Prop.Temperatur' auf: {heaterData.Temperatur}");
+                                    shape.CellsU["Prop.Temperatur"].FormulaU = $"\"{heaterData.Temperatur}\"";
+                                    break; // Shape gefunden und aktualisiert, Schleife verlassen
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Shape mit 'Prop.Heizungen' = '{heaterData.ID}' gefunden, aber es hat keine 'Prop.Temperatur' Eigenschaft.");
+                                }
+                            }
+                        }
+                    }
+                    catch (COMException comEx)
+                    {
+                        Debug.WriteLine($"COMException beim Zugriff auf die Zellen des Shapes: {comEx.Message}");
+                    }
+                }
             }
-            catch (JsonException ex)
+            catch (JsonException jsonEx)
             {
-                Debug.WriteLine("Fehler beim Deserialisieren der JSON-Nachricht: " + ex.Message);
+                Debug.WriteLine("Fehler beim Deserialisieren der JSON-Nachricht: " + jsonEx.Message);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Allgemeiner Fehler: " + ex.Message);
             }
         }
 
@@ -104,7 +139,7 @@ namespace ProjektAmpel
         public class HeaterData
         {
             public string ID { get; set; }
-            public string Temp { get; set; }
+            public string Temperatur { get; set; }
         }
 
 
